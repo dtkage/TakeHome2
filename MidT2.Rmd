@@ -1,0 +1,148 @@
+---
+title: "Midterm2"
+author: "Darren Kagey"
+date: "2023-04-27"
+output: html_document
+
+# Loading Packages
+```{r, waring=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+## Function
+```{r}
+BasketballOutcome <- function(gofor){ ## input parameter to for for 2 or 3
+  if(!is.numeric(gofor) | gofor-as.integer(gofor)!=0){ ## if gofor is numeric
+    stop("gofor must an integer") ## stop function
+  }else if(gofor !=2 && gofor !=3){ ## if the numeric value of gofor isn't 2 or 3
+    stop("gofor must be an integer of value 2 or 3") ## stop function
+  } # stop function
+  
+Inboundfor2 <- sample(c("complete", "incomplete"), size=1, prob=c(0.60, 0.40)) ## generate outcome of inbound pass when going for 2
+Inboundfor3 <- sample(c("complete", "incomplete"), size=1, prob=c(0.80, 0.20)) ## generate outcome of inbound pass when going for 3
+Shot2Point <- sample(c(2, 0, "fouled"), size=1, prob=c(0.55, 0.35, 0.10))## generates outcome of 2 point shot attempt
+Shot3Point <- sample(c(3, 0, "fouled"), size=1, prob=c(.3995, .5505, .05)) ## generates outcome of 3 point shot attempt
+TwoFTs <- sample(c(0:1), size=2, replace=TRUE, prob=c(rep(.605, 2)))## generates outcome of 2 free throws when fouled going for 2
+ThreeFTs <- sample(c(0:1), size=3, replace=TRUE, prob=c(rep(.90, 2)))## generates outcome of 3 free throws when fouled going for 3
+
+if(gofor==2){ ## goes for 2 point shot
+if(Inboundfor2=="incomplete"){ ## when inbound pass for 2 point shot is stolen
+  return(0) ## score 0 points
+  }else if(Inboundfor2=="complete"){ ## when inbound pass for 2 is complete
+    if(Shot2Point=="fouled"){ ## if fouled attempting 2 point shot
+  return(sum(TwoFTs)) ## attempt 2 free throws and score the sum of made free throws
+      }else if(Shot2Point != "fouled"){ ## when not fouled going for 2 and you shoot the 2 pointer
+  return(as.integer(Shot2Point)) # score 0 points if you miss the shot, score 2 points if you make the shot
+  }
+  }
+}else if(gofor==3){ ## goes for 3 point shot
+  if(Inboundfor3=="incomplete"){ ## when inbound pass fro 3 point shot is stolen
+    return(0) ## score 0 points
+    }else if(Inboundfor3=="complete"){ ## when inbound pass for 3 point shot is complete
+      if(Shot3Point=="fouled"){ ## if fouled attempting 3 point shot
+    sum(ThreeFTs) ## attempt 3 free throws and score the sum of made free throws
+    }else if(Shot3Point!="fouled"){ ## if not fouled attempting 3 point shot
+     return(as.integer(Shot3Point)) ## score 0 points if you miss the shot, score 3 points if you make the shot
+    }
+ }
+}
+}
+```
+
+# Simulation for 2 Point Shot
+```{r}
+set.seed(42) ## set seed
+Goingfor2_Simulation <- sapply(rep(2,100000), BasketballOutcome) ## simulates going for 2 point shot strategy 100,000 times
+summary(Goingfor2_Simulation) ## calculates summary stats of the 100,000 outcomes, including mean
+sd(Goingfor2_Simulation) ## calculates standard deviation of of 100,000 outcomes
+```
+
+The mean amount of points you'd expected to score if you choose to go for the 2 point shot is about 0.7181. This means that, on average, when you go for the 2 point shot, you'll probably not win. As for the standard deviation, it is 0.943732, which means that the different point outcomes weren't all that spread out and different. This makes some sense because the outcomes can only range between 0 and 2 so the SD won't be huge.
+
+Considering this standard deviation alongside the mean points scored of 0.7181 when going for 2 points, we may say that you might have as good a chance, if not better, to tie than to lose as the mean is closer to 1 point than 0 points and that outcomes deviate 0.943732 from the mean, meaning that it's quite reasonable to say that many outcomes will be 1 point and tie the game.
+
+# Simulation for 3 Point Shot
+```{r}
+set.seed(42) ##set seed
+Goingfor3_Simulation <- sapply(rep(3,100000), BasketballOutcome) ## simulates the going for 3 point shot strategy 100,000 times
+summary(Goingfor3_Simulation) ## calculates summary stats of 100,000 outcomes, including mean
+sd(Goingfor3_Simulation) ## calculates standard deviation of 100,000 outcomes
+```
+When you choose to go for the 3 point shot, on average you'll score about 1.014 points. So, on average, when you for the 3 point shot, you'll end up tying the game but you won't win it, as the average is around 1 point. This mean is bigger than the mean outcome when going for the 2 point shot, which makes sense because the outcomes of 3 points in the 3 point shot simulation, which is not a possible outcome in the 2 point shot simulation, pulls the average points scored up more.
+
+As for the standard deviation of the outcome when you go for the 3 point shot, it is 1.398047. This is almost twice is big a standard deviation as that for the 2 point shot simulation, which is because there is a wider range of possible outcomes in the 3 point shot simulations (0, 1, 2, 3) so the outcomes vary more. As a result, the outcomes of this simulation are more spread out from the mean outcome of 1.014 points, so it is more difficult to judge potentially likely outcomes from just the mean and SD and without outcomes' probabilities for this simulation.
+
+# Getting Tables for Probabilities
+```{r}
+## I turned the tables into data frames so when calculating approximate probabilities of the outcomes below by calling rows and columns, the output is more clear
+
+GoFor2_Results <- data.frame(table(Goingfor2_Simulation)) # take the table of 100,000 2 point shot strategy outcomes and turns it into a data frame
+GoFor2_Results # calls data frame
+
+GoFor3_Results <- data.frame(table(Goingfor3_Simulation)) # take the table of 100,000 3 point shot strategy outcomes and turns it into a data frame
+GoFor3_Results # calls data frame
+```
+
+# Probability of Losing for 2 Point Shot
+```{r}
+LoseProb_For2 <- GoFor2_Results[1,2]/(GoFor2_Results[1,2]+GoFor2_Results[2,2]+GoFor2_Results[3,2]) ## calculates probability of losing the game when going for 2 point shot
+## divides all 0 point outcomes when going for 2 point shot by all total outcomes when going for 2 point shot
+## code inspired by information on https://vitalflux.com/learn-r-extract-rows-columns-data-frame/
+
+LoseProb_For2 # calls the object that calculates the probability
+```
+# Probability of Tying for 2 Point Shot
+```{r}
+TieProb_For2 <- GoFor2_Results[2,2]/(GoFor2_Results[1,2]+GoFor2_Results[2,2]+GoFor2_Results[3,2]) ## calculates probability of tying the game when going for 2 point shot
+## divides all 1 point outcomes when going for 2 point shot by all total outcomes when going for 2 point shot
+#code inspired by information on https://vitalflux.com/learn-r-extract-rows-columns-data-frame/
+
+TieProb_For2 ## calls the object that calculates the probability
+```
+# Probability of Winning for 2 Point Shot
+```{r}
+WinProb_For2 <- GoFor2_Results[3,2]/(GoFor2_Results[1,2]+GoFor2_Results[2,2]+GoFor2_Results[3,2])## calculates probability of winning the game when going for 2 point shot
+## divides all 2 point outcomes when going for 2 point shot by all total outcomes when going for 2 point shot
+#code inspired by information on https://vitalflux.com/learn-r-extract-rows-columns-data-frame/
+
+WinProb_For2 ## calls object that calculates the probability
+```
+
+Based on the outcomes of the 2 Point Shot Simulation (GoFor2_Simulation), if you choose to attempt the 2 Point Shot, the probability that you score 0 points is losing is about 0.62601, the probability that you score 1 point and tie the game is approximately 0.0299, and the probability that you score 2 points and win the game is around 0.34409.
+So, if you choose to go for the 2 point shot, there's approximately a 62.601% chance you lose, a 2.99% chance you tie, and a 34.409% chance you win.
+
+# Probability of Losing for 3 Point Shot
+```{r}
+LoseProb_For3 <-GoFor3_Results[1,2]/(GoFor3_Results[1,2]+GoFor3_Results[2,2]+GoFor3_Results[3,2]+GoFor3_Results[4,2])## calculates probability of losing the game when going for 3 point shot
+## divides all 0 point outcomes when going for 3 point shot by all total outcomes when going for 3 point shot
+#code inspired by information on https://vitalflux.com/learn-r-extract-rows-columns-data-frame/
+
+LoseProb_For3 ##calls object that calculates the probability
+```
+# Probability of Tying for 3 Point Shot
+```{r}
+TieProb_For3 <- GoFor3_Results[2,2]/(GoFor3_Results[1,2]+GoFor3_Results[2,2]+GoFor3_Results[3,2]+GoFor3_Results[4,2])## calculates probability of tying the game when going for 3 point shot
+## divides all 1 point outcomes when going for 3 point shot by all total outcomes when going for 3 point shot
+#code inspired by information on https://vitalflux.com/learn-r-extract-rows-columns-data-frame/
+
+TieProb_For3 ## calls object that calculates the probability
+```
+# Probability of Winning for 3 Point Shot
+```{r}
+WinProb_For3 <- (GoFor3_Results[3,2]+GoFor3_Results[4,2])/(GoFor3_Results[1,2]+GoFor3_Results[2,2]+GoFor3_Results[3,2]+GoFor3_Results[4,2])## calculates probability of winning the game when going for 3 point shot
+## divides all combined 2 and 3 point outcomes when going for 3 point shot by all total outcomes when going for 3 point shot
+#code inspired by information on https://vitalflux.com/learn-r-extract-rows-columns-data-frame/
+
+WinProb_For3 ## calls object that calculates probability
+```
+
+Based on the results of the 3 Point Shot Simulation (GoFor3_Simulation), if you choose to go for the 3 point shot, the probability that you score no points and lose is about 0.64706, the probability that you score 1 point and tie the game is about 0.0147, and the probability that you score 2 or 3 points and win the game is approximately 0.33824.
+So, if you go for the 3 point shot, there's about a 64.706% chance you lose, a 1.47% chance you tie, and a 33.824% chance you win.
+
+# Decision
+The probabilities of each outcome for the 2 point shot and the 3 point shot are very similar. Between each strategy, the probability of scoring 0 points and losing only differs by about .02, the probability of scoring 1 point and tying the game only differs by about 0.015, and the probability of scoring 2 or 3 points and winning the game only differs by about 0.006. 
+
+However, one strategy is still favored over the other based on these assumptions and probabilities. The probability of scoring 0 points and losing when going for the 2 point shot is 0.62601, which is just lower than the probability of scoring no points and losing when going for the 3 point shot, which is 0.64706. Further, the probability of scoring 1 point and tying when going for the 2 point shot, 0.0299, is higher than the probability of 0.0147 to score 1 point and tying the game when going for the 3 point shot. Lastly, the probability, when going for the 2 point shot, of  winning is 0.34409, which is higher than the probability, when going for the 3 point shot, of winning, which is 0.33824. So, while the probabilities are all close, the 2 point shot strategy still has a lower probability of scoring 0 point and losing, a higher probability of scoring 1 point and tying, and a higher probability of winning.
+
+This means that when you go for the 2 point shot, you have a better chance of not losing, as the probability of losing is lower and the probability of tying is higher, as well as having a better chance of winning, as the probability of winning is higher. So, because it statistically gives you better chance to win and a better chance to not lose, going for the 2 point shot is the preferred strategy.
+
